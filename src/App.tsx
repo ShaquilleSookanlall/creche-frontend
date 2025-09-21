@@ -5,7 +5,9 @@ import ParentRegisterPage from "./pages/ParentRegisterPage";
 import ChildRegisterPage from "./pages/ChildRegisterPage";
 import UserScheduleViewing from "./pages/UserScheduleViewing";
 import AdminViewingsPage from "./pages/AdminViewingsPage";
-import AdminUsersPage from "./pages/AdminUsersPage"; // ⬅️ NEW
+import AdminUsersPage from "./pages/AdminUsersPage";
+import ParentChildRequestPage from "./pages/ParentChildRequestPage";   // ⬅️ NEW
+import AdminChildRequestsPage from "./pages/AdminChildRequestsPage";   // ⬅️ NEW
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // -------------------- Route Guards --------------------
@@ -31,6 +33,15 @@ function RequireUser({ children }: { children: JSX.Element }) {
   if (loading) return <div style={{ padding: 24 }}>Checking login…</div>;
   if (!user) return <Navigate to="/login" replace />;
   if (user.role !== "USER") return <Navigate to="/" replace />;
+  return children;
+}
+
+// PARENT-only guard  ⬅️ NEW
+function RequireParent({ children }: { children: JSX.Element }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div style={{ padding: 24 }}>Checking login…</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== "PARENT") return <Navigate to="/" replace />;
   return children;
 }
 
@@ -148,18 +159,22 @@ function NavBar() {
         <>
           <Link to="/me">My Account</Link>
 
-          {/* USER-only link (regular users) */}
+          {/* USER-only links (regular users) */}
           {user.role === "USER" && <Link to="/user/viewings">Schedule Viewing</Link>}
+
+          {/* PARENT-only links  ⬅️ NEW */}
+          {user.role === "PARENT" && <Link to="/parent/child-requests">Add My Child</Link>}
 
           {/* Admin-only links */}
           {user.role === "ADMIN" && (
             <>
-              <Link to="/admin/users">Users</Link> {/* ⬅️ NEW */}
+              <Link to="/admin/users">Users</Link>
               <Link to="/admin/register/parent">Register Parent</Link>
               <Link to="/admin/register/child">Register Child</Link>
               <Link to="/admin/parents">Parents</Link>
               <Link to="/admin/children">Children</Link>
               <Link to="/admin/viewings">Viewings</Link>
+              <Link to="/admin/child-requests">Child Requests</Link> {/* ⬅️ NEW */}
             </>
           )}
           <button onClick={logout} style={{ marginLeft: "auto" }}>Logout</button>
@@ -212,10 +227,10 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* User-protected */}
+          {/* Auth-protected */}
           <Route path="/me" element={<RequireAuth><MePage /></RequireAuth>} />
 
-          {/* USER-only booking route */}
+          {/* USER-only */}
           <Route
             path="/user/viewings"
             element={
@@ -228,31 +243,24 @@ export default function App() {
           {/* Redirect any old parent link to the new user page */}
           <Route path="/parent/viewings" element={<Navigate to="/user/viewings" replace />} />
 
-          {/* Admin-protected */}
+          {/* PARENT-only  ⬅️ NEW */}
           <Route
-            path="/admin/users"
-            element={<RequireAdmin><AdminUsersPage /></RequireAdmin>}
+            path="/parent/child-requests"
+            element={
+              <RequireParent>
+                <ParentChildRequestPage />
+              </RequireParent>
+            }
           />
-          <Route
-            path="/admin/register/parent"
-            element={<RequireAdmin><ParentRegisterPage /></RequireAdmin>}
-          />
-          <Route
-            path="/admin/register/child"
-            element={<RequireAdmin><ChildRegisterPage /></RequireAdmin>}
-          />
-          <Route
-            path="/admin/parents"
-            element={<RequireAdmin><ParentsListPage /></RequireAdmin>}
-          />
-          <Route
-            path="/admin/children"
-            element={<RequireAdmin><ChildrenListPage /></RequireAdmin>}
-          />
-          <Route
-            path="/admin/viewings"
-            element={<RequireAdmin><AdminViewingsPage /></RequireAdmin>}
-          />
+
+          {/* Admin-only */}
+          <Route path="/admin/users" element={<RequireAdmin><AdminUsersPage /></RequireAdmin>} />
+          <Route path="/admin/register/parent" element={<RequireAdmin><ParentRegisterPage /></RequireAdmin>} />
+          <Route path="/admin/register/child" element={<RequireAdmin><ChildRegisterPage /></RequireAdmin>} />
+          <Route path="/admin/parents" element={<RequireAdmin><ParentsListPage /></RequireAdmin>} />
+          <Route path="/admin/children" element={<RequireAdmin><ChildrenListPage /></RequireAdmin>} />
+          <Route path="/admin/viewings" element={<RequireAdmin><AdminViewingsPage /></RequireAdmin>} />
+          <Route path="/admin/child-requests" element={<RequireAdmin><AdminChildRequestsPage /></RequireAdmin>} /> {/* ⬅️ NEW */}
 
           {/* Fallback */}
           <Route path="*" element={<div style={{ padding: 24 }}>Not Found</div>} />
